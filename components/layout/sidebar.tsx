@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { getBlobUrl } from "@/lib/blob-utils"
 import type { User } from "@supabase/supabase-js"
 
 interface Profile {
@@ -105,7 +106,7 @@ export function Sidebar({ user, profile }: SidebarProps) {
           className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
         >
           <Avatar className="w-10 h-10">
-            <AvatarImage src={profile?.profile_pic_url || undefined} />
+            <AvatarImage src={getBlobUrl(profile?.profile_pic_url)} />
             <AvatarFallback className="gradient-primary text-white">
               {profile?.username?.[0]?.toUpperCase() || <UserIcon className="w-5 h-5" />}
             </AvatarFallback>

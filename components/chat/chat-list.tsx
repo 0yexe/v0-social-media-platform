@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { formatDistanceToNow } from "@/lib/date-utils"
+import { getBlobUrl } from "@/lib/blob-utils"
 import type { Profile, Group, Message } from "@/lib/types"
 
 interface ChatItem {
@@ -99,11 +100,11 @@ export function ChatList({ items, currentUserId }: ChatListProps) {
               >
                 <Avatar className="w-14 h-14">
                   <AvatarImage
-                    src={
+                    src={getBlobUrl(
                       item.type === "dm"
-                        ? item.profile?.profile_pic_url || undefined
-                        : item.group?.avatar_url || undefined
-                    }
+                        ? item.profile?.profile_pic_url
+                        : item.group?.avatar_url
+                    )}
                   />
                   <AvatarFallback className="bg-primary/10 text-primary">
                     {item.type === "dm" ? (

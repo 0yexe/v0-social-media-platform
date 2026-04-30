@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Image, Film, X, Upload, ArrowLeft } from "lucide-react"
+import { Image, Film, X, Upload, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { createClient } from "@/lib/supabase/client"
@@ -16,12 +16,21 @@ export default function CreatePostPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
+      // Validate file size (max 50MB)
+      if (selectedFile.size > 50 * 1024 * 1024) {
+        setError("File too large. Maximum size is 50MB.")
+        return
+      }
+      
+      setError(null)
       setFile(selectedFile)
       const reader = new FileReader()
       reader.onload = () => setPreview(reader.result as string)
@@ -33,44 +42,57 @@ export default function CreatePostPage() {
     if (!file) return
 
     setLoading(true)
+    setError(null)
+    setUploadProgress(0)
+    
     const supabase = createClient()
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not authenticated")
 
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
-      
-      const { error: uploadError } = await supabase.storage
-        .from("media")
-        .upload(fileName, file)
+      // Upload file to Vercel Blob
+      setUploadProgress(20)
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", type === "story" ? "stories" : "posts")
 
-      if (uploadError) throw uploadError
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("media")
-        .getPublicUrl(fileName)
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.error || "Upload failed")
+      }
 
+      const { pathname } = await uploadResponse.json()
+      setUploadProgress(70)
+
+      // Save to database with pathname (for private blob access)
       if (type === "story") {
-        await supabase.from("stories").insert({
+        const { error: dbError } = await supabase.from("stories").insert({
           user_id: user.id,
-          media_url: publicUrl,
+          media_url: pathname,
         })
+        if (dbError) throw dbError
       } else {
-        await supabase.from("posts").insert({
+        const { error: dbError } = await supabase.from("posts").insert({
           user_id: user.id,
-          media_url: publicUrl,
+          media_url: pathname,
           caption,
           type,
         })
+        if (dbError) throw dbError
       }
 
+      setUploadProgress(100)
       router.push("/app")
       router.refresh()
-    } catch (error) {
-      console.error("Error creating post:", error)
+    } catch (err) {
+      console.error("Error creating post:", err)
+      setError(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -95,12 +117,26 @@ export default function CreatePostPage() {
             disabled={!file || loading}
             className="gradient-primary text-white rounded-xl"
           >
-            {loading ? "Posting..." : "Share"}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {uploadProgress}%
+              </>
+            ) : (
+              "Share"
+            )}
           </Button>
         </div>
       </header>
 
       <div className="max-w-xl mx-auto p-4 space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Type Selector */}
         <div className="flex gap-2 bg-muted p-1 rounded-xl">
           {[
@@ -151,6 +187,16 @@ export default function CreatePostPage() {
               >
                 <X className="w-4 h-4" />
               </Button>
+              
+              {/* Upload Progress Overlay */}
+              {loading && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    <p className="text-sm">Uploading... {uploadProgress}%</p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <motion.button
@@ -167,7 +213,7 @@ export default function CreatePostPage() {
                   Click to upload
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {type === "reel" ? "MP4, MOV up to 60s" : "JPG, PNG, GIF"}
+                  {type === "reel" ? "MP4, WebM up to 50MB" : "JPG, PNG, GIF, WebP up to 50MB"}
                 </p>
               </div>
             </motion.button>
@@ -175,7 +221,7 @@ export default function CreatePostPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept={type === "reel" ? "video/*" : "image/*"}
+            accept={type === "reel" ? "video/mp4,video/webm" : "image/jpeg,image/png,image/gif,image/webp"}
             onChange={handleFileSelect}
             className="hidden"
           />
