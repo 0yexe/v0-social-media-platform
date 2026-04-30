@@ -33,7 +33,7 @@ export default async function AppLayout({
       </main>
       
       {/* Mobile Bottom Navigation */}
-      <MobileNav />
+      <MobileNav username={profile?.username} />
     </div>
   )
 }

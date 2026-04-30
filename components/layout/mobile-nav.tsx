@@ -5,22 +5,28 @@ import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { Home, Search, PlusSquare, Heart, User } from "lucide-react"
 
-const navItems = [
-  { icon: Home, href: "/app" },
-  { icon: Search, href: "/app/explore" },
-  { icon: PlusSquare, href: "/app/create" },
-  { icon: Heart, href: "/app/notifications" },
-  { icon: User, href: "/app/profile" },
-]
+interface MobileNavProps {
+  username?: string
+}
 
-export function MobileNav() {
+export function MobileNav({ username }: MobileNavProps) {
   const pathname = usePathname()
+
+  const navItems = [
+    { icon: Home, href: "/app" },
+    { icon: Search, href: "/app/explore" },
+    { icon: PlusSquare, href: "/app/create" },
+    { icon: Heart, href: "/app/notifications" },
+    { icon: User, href: username ? `/app/profile/${username}` : "/app/profile" },
+  ]
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-50">
       <div className="flex items-center justify-around py-3 px-4">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href))
+          const isActive = pathname === item.href || 
+            (item.href !== "/app" && pathname.startsWith(item.href)) ||
+            (item.icon === User && pathname.includes("/profile/"))
           return (
             <Link
               key={item.href}
