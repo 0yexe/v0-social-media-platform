@@ -1,5 +1,3 @@
-// ... existing imports ...
-
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
