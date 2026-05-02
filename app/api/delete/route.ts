@@ -1,4 +1,7 @@
-export async function DELETE(request: NextRequest) {
+import { del } from '@vercel/blob'
+import { type NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+  export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
