@@ -17,7 +17,7 @@ export function MobileNav({ username }: MobileNavProps) {
     { icon: Search, href: "/app/explore" },
     { icon: PlusSquare, href: "/app/create" },
     { icon: Heart, href: "/app/notifications" },
-    { icon: User, href: "/app/profile"},
+    { icon: User, href: "/profile"},
   ]
 
   return (
