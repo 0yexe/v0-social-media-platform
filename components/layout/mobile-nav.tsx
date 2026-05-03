@@ -17,7 +17,7 @@ export function MobileNav({ username }: MobileNavProps) {
     { icon: Search, href: "/app/explore" },
     { icon: PlusSquare, href: "/app/create" },
     { icon: Heart, href: "/app/notifications" },
-    { icon: User, href: username ? `/app/profile/${username}` : "/app/profile" },
+    { icon: User, href: "/profile" },
   ]
 
   return (
@@ -26,7 +26,7 @@ export function MobileNav({ username }: MobileNavProps) {
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== "/app" && pathname.startsWith(item.href)) ||
-            (item.icon === User && pathname.includes("/profile/"))
+            (item.icon === User && pathname.includes("/profile"))
           return (
             <Link
               key={item.href}
