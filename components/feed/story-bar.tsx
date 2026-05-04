@@ -6,7 +6,6 @@ import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import type { Story, Profile } from "@/lib/types"
-import { getBlobUrl } from "@/lib/blob-utils"
 
 interface StoryBarProps {
   stories: (Story & { profiles: Profile })[]
@@ -192,7 +191,7 @@ export function StoryBar({ stories, currentUserId, currentUserProfile }: StoryBa
               {/* Story Image */}
               <div className="w-full h-full flex items-center justify-center">
                 <img
-                  src={getBlobUrl(selectedStory.media_url)}
+                  src={selectedStory.media_url}
                   alt="Story"
                   className="max-w-full max-h-full object-contain rounded-2xl"
                 />

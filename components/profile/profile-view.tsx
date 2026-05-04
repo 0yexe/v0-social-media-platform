@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import type { Profile, Post } from "@/lib/types"
-import { getBlobUrl, isVideoFile } from "@/lib/blob-utils"
 
 interface ProfileViewProps {
   profile: Profile
@@ -110,7 +109,7 @@ export function ProfileView({
         <div className="p-6">
           <div className="flex items-start gap-6 mb-6">
             <Avatar className="w-24 h-24 border-4 border-card shadow-lg">
-              <AvatarImage src={getBlobUrl(profile.profile_pic_url)} />
+              <AvatarImage src={profile.profile_pic_url || undefined} />
               <AvatarFallback className="text-2xl gradient-primary text-white">
                 {profile.username?.[0]?.toUpperCase()}
               </AvatarFallback>
@@ -212,14 +211,14 @@ export function ProfileView({
                 className="relative aspect-square bg-muted"
               >
                 {post.media_url && (
-                  post.type === "reel" || isVideoFile(post.media_url) ? (
+                  post.type === "reel" ? (
                     <video
-                      src={getBlobUrl(post.media_url)}
+                      src={post.media_url}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <img
-                      src={getBlobUrl(post.media_url)}
+                      src={post.media_url}
                       alt=""
                       className="w-full h-full object-cover"
                     />

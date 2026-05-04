@@ -15,7 +15,6 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import type { Post, Profile } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/date-utils"
-import { getBlobUrl, isVideoFile } from "@/lib/blob-utils"
 
 interface PostCardProps {
   post: Post & { profiles: Profile; likes: { user_id: string }[]; comments: { id: string }[] }
@@ -103,9 +102,9 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       {/* Media */}
       {post.media_url && (
         <div className="relative aspect-square bg-muted">
-          {post.type === "reel" || isVideoFile(post.media_url) ? (
+          {post.type === "reel" ? (
             <video
-              src={getBlobUrl(post.media_url)}
+              src={post.media_url}
               className="w-full h-full object-cover"
               controls
               loop
@@ -113,7 +112,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
             />
           ) : (
             <img
-              src={getBlobUrl(post.media_url)}
+              src={post.media_url}
               alt={post.caption || "Post"}
               className="w-full h-full object-cover"
             />

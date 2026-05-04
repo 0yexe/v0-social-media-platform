@@ -6,7 +6,6 @@ import { motion } from "framer-motion"
 import { Search, Film, Heart, MessageCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import type { Post, Profile } from "@/lib/types"
-import { getBlobUrl, isVideoFile } from "@/lib/blob-utils"
 
 interface ExploreGridProps {
   posts: (Post & { profiles: Profile; likes: { count: number }[]; comments: { count: number }[] })[]
@@ -55,14 +54,14 @@ export function ExploreGrid({ posts }: ExploreGridProps) {
                   className="relative aspect-square bg-muted group"
                 >
                   {post.media_url && (
-                    post.type === "reel" || isVideoFile(post.media_url) ? (
+                    post.type === "reel" ? (
                       <video
-                        src={getBlobUrl(post.media_url)}
+                        src={post.media_url}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <img
-                        src={getBlobUrl(post.media_url)}
+                        src={post.media_url}
                         alt=""
                         className="w-full h-full object-cover"
                       />
