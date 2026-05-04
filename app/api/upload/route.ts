@@ -37,14 +37,12 @@ export async function POST(request: NextRequest) {
     const extension = file.name.split('.').pop()
     const filename = `${folder}/${user.id}/${timestamp}.${extension}`
 
-    // Upload to Vercel Blob (Updated with token and public access)
+    // Upload to Vercel Blob (private storage)
     const blob = await put(filename, file, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      access: 'private',
     })
 
     return NextResponse.json({ 
-      url: blob.url,
       pathname: blob.pathname,
       contentType: file.type,
     })
