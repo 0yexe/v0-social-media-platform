@@ -65,7 +65,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           className="flex items-center gap-3"
         >
           <Avatar className="w-10 h-10">
-            <AvatarImage src={getBlobUrl(post.profiles?.profile_pic_url)} />
+            <AvatarImage src={post.profiles?.profile_pic_url || undefined} />
             <AvatarFallback className="bg-secondary">
               {post.profiles?.username?.[0]?.toUpperCase()}
             </AvatarFallback>
