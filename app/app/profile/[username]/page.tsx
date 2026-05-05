@@ -13,7 +13,7 @@ export default async function ProfilePage({
 
   if (!user) return null
 
-  // Get profile
+  // 1. Get profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -24,18 +24,20 @@ export default async function ProfilePage({
     notFound()
   }
 
-  // Get posts
+  // 2. Get posts (Updated: Ab ye Telegram ID bhi fetch karega)
   const { data: posts } = await supabase
     .from("posts")
     .select(`
       *,
+      telegram_file_id,
+      media_type,
       likes(count),
       comments(count)
     `)
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false })
 
-  // Get follower/following counts
+  // 3. Get follower/following counts
   const { count: followersCount } = await supabase
     .from("follows")
     .select("*", { count: "exact", head: true })
@@ -46,7 +48,7 @@ export default async function ProfilePage({
     .select("*", { count: "exact", head: true })
     .eq("follower_id", profile.id)
 
-  // Check if current user follows this profile
+  // 4. Check if current user follows this profile
   const { data: isFollowing } = await supabase
     .from("follows")
     .select("*")
