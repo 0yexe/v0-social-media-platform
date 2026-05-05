@@ -33,19 +33,24 @@ interface SidebarProps {
   profile: Profile | null
 }
 
-const navItems = [
-  { icon: Home, label: "Home", href: "/app" },
-  { icon: Search, label: "Explore", href: "/app/explore" },
-  { icon: Film, label: "Reels", href: "/app/reels" },
-  { icon: MessageCircle, label: "Messages", href: "/app/messages" },
-  { icon: Heart, label: "Notifications", href: "/app/notifications" },
-  { icon: Users, label: "Groups", href: "/app/groups" },
-  { icon: PlusSquare, label: "Create", href: "/app/create" },
-]
-
 export function Sidebar({ user, profile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+
+  // Profile URL tay karna: Agar username hai toh wo, nahi toh user id
+  const profileHref = `/app/profile/${profile?.username || user?.id}`
+
+  const navItems = [
+    { icon: Home, label: "Home", href: "/app" },
+    { icon: Search, label: "Explore", href: "/app/explore" },
+    { icon: Film, label: "Reels", href: "/app/reels" },
+    { icon: MessageCircle, label: "Messages", href: "/app/messages" },
+    { icon: Heart, label: "Notifications", href: "/app/notifications" },
+    { icon: Users, label: "Groups", href: "/app/groups" },
+    { icon: PlusSquare, label: "Create", href: "/app/create" },
+    // Naya: Navigation list mein bhi Profile add kar di
+    { icon: UserIcon, label: "Profile", href: profileHref },
+  ]
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -69,11 +74,7 @@ export function Sidebar({ user, profile }: SidebarProps) {
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative block"
-            >
+            <Link key={item.href} href={item.href} className="relative block">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -99,10 +100,10 @@ export function Sidebar({ user, profile }: SidebarProps) {
         })}
       </nav>
 
-      {/* User Profile */}
+      {/* Bottom User Section */}
       <div className="border-t border-border pt-4 space-y-3">
         <Link
-          href={`/app/profile/${profile?.username || user.id}`}
+          href={profileHref}
           className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
         >
           <Avatar className="w-10 h-10">
@@ -116,18 +117,13 @@ export function Sidebar({ user, profile }: SidebarProps) {
               {profile?.username || "User"}
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {user.email}
+              {user?.email}
             </p>
           </div>
         </Link>
 
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 rounded-xl"
-            asChild
-          >
+          <Button variant="ghost" size="sm" className="flex-1 rounded-xl" asChild>
             <Link href="/app/settings">
               <Settings className="w-4 h-4 mr-2" />
               Settings
