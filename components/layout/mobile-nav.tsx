@@ -7,42 +7,37 @@ import { Home, Search, PlusSquare, Heart, User } from "lucide-react"
 
 interface MobileNavProps {
   username?: string
-  userId?: string // Safety ke liye userId bhi add kar sakte hain
+  userId?: string 
 }
 
 export function MobileNav({ username, userId }: MobileNavProps) {
   const pathname = usePathname()
 
-  // Profile URL decide karna: Agar username hai toh wo, nahi toh userId, varna default login
+  // Sahi Profile Path tay karna
   const profileHref = username 
     ? `/app/profile/${username}` 
     : userId 
       ? `/app/profile/${userId}` 
-      : "/auth/login"
+      : "/app"
 
   const navItems = [
     { icon: Home, href: "/app" },
     { icon: Search, href: "/app/explore" },
     { icon: PlusSquare, href: "/app/create" },
     { icon: Heart, href: "/app/notifications" },
-    { icon: User, href: profileHref }, // Ab ye dynamic link use karega
+    { icon: User, href: profileHref },
   ]
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-50">
       <div className="flex items-center justify-around py-3 px-4">
         {navItems.map((item) => {
-          // Is logic se icon tab bhi "Active" (highlight) rahega jab aap profile ke andar honge
           const isActive = pathname === item.href || 
-            (item.href !== "/app" && item.href !== profileHref && pathname.startsWith(item.href)) ||
+            (item.href !== "/app" && pathname.startsWith(item.href)) ||
             (item.href === profileHref && pathname.includes("/profile"))
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative p-2"
-            >
+            <Link key={item.href} href={item.href} className="relative p-2">
               <motion.div
                 whileTap={{ scale: 0.9 }}
                 className={`${isActive ? "text-primary" : "text-muted-foreground"}`}
