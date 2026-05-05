@@ -6,9 +6,19 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  // 1. Safety Check: Agar environment variables nahi hain toh crash na ho
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("Critical Error: Supabase keys are missing in Environment Variables!")
+    return supabaseResponse
+  }
+
+  // 2. Initialize Supabase
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -29,26 +39,25 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
+  // 3. Get User Session
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect app routes
-  if (
-    request.nextUrl.pathname.startsWith('/app') &&
-    !user
-  ) {
+  // 4. Protection Logic (Routes handling)
+  const isAppPage = request.nextUrl.pathname.startsWith('/app')
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth/login') || 
+                     request.nextUrl.pathname.startsWith('/auth/sign-up')
+
+  // Agar login nahi hai aur app use kar raha hai -> Login par bhejo
+  if (isAppPage && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect logged in users from auth pages to app
-  if (
-    (request.nextUrl.pathname.startsWith('/auth/login') ||
-      request.nextUrl.pathname.startsWith('/auth/sign-up')) &&
-    user
-  ) {
+  // Agar login hai aur login page khol raha hai -> App par bhejo
+  if (isAuthPage && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
     return NextResponse.redirect(url)
