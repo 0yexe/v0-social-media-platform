@@ -15,7 +15,7 @@ export default async function AppLayout({
     redirect("/auth/login")
   }
 
-  // Fetch user profile
+  // User profile fetch kar rahe hain
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -24,7 +24,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - isme profile data pass ho raha hai */}
       <Sidebar user={user} profile={profile} />
       
       {/* Main Content */}
@@ -32,8 +32,8 @@ export default async function AppLayout({
         {children}
       </main>
       
-      {/* Mobile Bottom Navigation */}
-      <MobileNav username={profile?.username} />
+      {/* Mobile Bottom Navigation - Yahan humne userId add kar diya hai */}
+      <MobileNav username={profile?.username} userId={user.id} />
     </div>
   )
 }
