@@ -36,7 +36,6 @@ export function ProfileView({
 
   const handleReport = async () => {
     setSubmittingReport(true)
-    // Add report logic here
     setTimeout(() => {
       setSubmittingReport(false)
       setShowReportModal(false)
@@ -44,17 +43,18 @@ export function ProfileView({
     }, 1000)
   }
 
-  // Media URL nikalne ka logic (Telegram + Blob compatibility)
+  // Naya Logic: Query Parameter wala link use karega (?fileId=)
   const getMediaSource = (post: any) => {
     if (post.telegram_file_id) {
-      return `/api/media/${post.telegram_file_id}`;
+      // Isse folder wala 404 error khatam ho jayega
+      return `/api/media?fileId=${post.telegram_file_id}`;
     }
     return getBlobUrl(post.media_url);
   }
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
-      {/* Profile Header (Bio, Stats, etc.) */}
+      {/* Profile Header */}
       <div className="p-4 md:p-8 flex flex-col md:flex-row gap-8 items-center md:items-start border-b border-border">
         <Avatar className="w-24 h-24 md:w-32 md:h-32 border-2 border-border">
           <AvatarImage src={getBlobUrl(currentProfile.profile_pic_url)} />
@@ -92,7 +92,7 @@ export function ProfileView({
         </div>
       </div>
 
-      {/* Tabs Section */}
+      {/* Tabs */}
       <div className="flex border-b border-border">
         {[
           { id: "posts", icon: Grid, label: "POSTS" },
@@ -132,78 +132,55 @@ export function ProfileView({
               ) : (
                 <img
                   src={getMediaSource(post)}
-                  alt=""
+                  alt="post"
                   className="w-full h-full object-cover"
                 />
               )}
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white font-bold">
-                {/* Stats overlays could go here */}
-              </div>
             </motion.div>
           ))
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="col-span-3 py-20 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center mx-auto">
-              {activeTab === "posts" ? <Grid className="w-8 h-8 text-muted-foreground" /> : <Film className="w-8 h-8 text-muted-foreground" />}
-            </div>
-            <h3 className="text-xl font-bold">No {activeTab} yet</h3>
-            <p className="text-muted-foreground text-sm">{isOwnProfile ? "Start sharing your content!" : "This user hasn't posted anything yet."}</p>
-          </motion.div>
+          <div className="col-span-3 py-20 text-center">
+            <p className="text-muted-foreground">No {activeTab} yet.</p>
+          </div>
         )}
       </div>
 
-      {/* Post Detail Modal */}
+      {/* Detail Modal */}
       <AnimatePresence>
         {selectedPost && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
             onClick={() => setSelectedPost(null)}
           >
-            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full z-[60]">
+            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 text-white z-[60]">
               <X className="w-6 h-6" />
             </button>
             
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              className="max-w-4xl w-full bg-card rounded-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
-              className="max-w-4xl w-full bg-card rounded-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] shadow-2xl"
             >
-              <div className="flex-1 bg-black flex items-center justify-center min-h-[300px]">
+              <div className="flex-1 bg-black flex items-center justify-center">
                 {selectedPost.media_type === "video" || selectedPost.type === "reel" || isVideoFile(selectedPost.media_url) ? (
-                  <video
-                    src={getMediaSource(selectedPost)}
-                    className="max-w-full max-h-[60vh] md:max-h-[90vh] object-contain"
-                    controls
-                    autoPlay
-                    loop
-                  />
+                  <video src={getMediaSource(selectedPost)} className="max-w-full max-h-full" controls autoPlay loop />
                 ) : (
-                  <img
-                    src={getMediaSource(selectedPost)}
-                    alt=""
-                    className="max-w-full max-h-[60vh] md:max-h-[90vh] object-contain"
-                  />
+                  <img src={getMediaSource(selectedPost)} alt="" className="max-w-full max-h-full object-contain" />
                 )}
               </div>
-              
-              <div className="w-full md:w-80 p-4 border-t md:border-t-0 md:border-l border-border bg-card">
+              <div className="w-full md:w-80 p-4 bg-card border-l border-border">
                 <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="w-10 h-10 border border-border">
+                  <Avatar className="w-8 h-8">
                     <AvatarImage src={getBlobUrl(currentProfile.profile_pic_url)} />
-                    <AvatarFallback className="gradient-primary text-white">
-                      {currentProfile.username?.[0]?.toUpperCase()}
-                    </AvatarFallback>
+                    <AvatarFallback>{currentProfile.username?.[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="font-bold text-sm">{currentProfile.username}</span>
+                  <span className="font-bold">{currentProfile.username}</span>
                 </div>
-                <div className="max-h-[200px] overflow-y-auto scrollbar-hide">
-                  {selectedPost.caption && <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedPost.caption}</p>}
-                </div>
+                <p className="text-sm">{selectedPost.caption}</p>
               </div>
             </motion.div>
           </motion.div>
