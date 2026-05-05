@@ -43,10 +43,9 @@ export function ProfileView({
     }, 1000)
   }
 
-  // Naya Logic: Query Parameter wala link use karega (?fileId=)
+  // Media URL nikalne ka logic (Telegram Query Parameter Support)
   const getMediaSource = (post: any) => {
     if (post.telegram_file_id) {
-      // Isse folder wala 404 error khatam ho jayega
       return `/api/media?fileId=${post.telegram_file_id}`;
     }
     return getBlobUrl(post.media_url);
@@ -69,7 +68,8 @@ export function ProfileView({
             <div className="flex gap-2">
               {isOwnProfile ? (
                 <Button variant="secondary" size="sm" className="rounded-xl" asChild>
-                  <Link href="/app/settings/profile">Edit Profile</Link>
+                  {/* FIXED: Path updated from /app/settings/profile to /app/settings */}
+                  <Link href="/app/settings">Edit Profile</Link>
                 </Button>
               ) : (
                 <Button size="sm" className={`rounded-xl ${isFollowing ? "bg-secondary" : "gradient-primary text-white"}`}>
@@ -92,7 +92,7 @@ export function ProfileView({
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Section */}
       <div className="flex border-b border-border">
         {[
           { id: "posts", icon: Grid, label: "POSTS" },
@@ -152,35 +152,39 @@ export function ProfileView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-y-auto"
             onClick={() => setSelectedPost(null)}
           >
-            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 text-white z-[60]">
+            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full z-[60]">
               <X className="w-6 h-6" />
             </button>
             
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="max-w-4xl w-full bg-card rounded-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              className="max-w-4xl w-full bg-card rounded-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] shadow-2xl"
             >
-              <div className="flex-1 bg-black flex items-center justify-center">
+              <div className="flex-1 bg-black flex items-center justify-center min-h-[300px]">
                 {selectedPost.media_type === "video" || selectedPost.type === "reel" || isVideoFile(selectedPost.media_url) ? (
-                  <video src={getMediaSource(selectedPost)} className="max-w-full max-h-full" controls autoPlay loop />
+                  <video src={getMediaSource(selectedPost)} className="max-w-full max-h-[60vh] md:max-h-[90vh] object-contain" controls autoPlay loop />
                 ) : (
-                  <img src={getMediaSource(selectedPost)} alt="" className="max-w-full max-h-full object-contain" />
+                  <img src={getMediaSource(selectedPost)} alt="" className="max-w-full max-h-[60vh] md:max-h-[90vh] object-contain" />
                 )}
               </div>
-              <div className="w-full md:w-80 p-4 bg-card border-l border-border">
+              
+              <div className="w-full md:w-80 p-4 bg-card border-t md:border-t-0 md:border-l border-border overflow-y-auto">
                 <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-8 h-8 border border-border">
                     <AvatarImage src={getBlobUrl(currentProfile.profile_pic_url)} />
                     <AvatarFallback>{currentProfile.username?.[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="font-bold">{currentProfile.username}</span>
+                  <span className="font-bold text-sm">{currentProfile.username}</span>
                 </div>
-                <p className="text-sm">{selectedPost.caption}</p>
+                <div className="max-h-[200px] overflow-y-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedPost.caption}</p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
