@@ -18,7 +18,13 @@ import { formatDistanceToNow } from "@/lib/date-utils"
 import { getBlobUrl, isVideoFile } from "@/lib/blob-utils"
 
 interface PostCardProps {
-  post: Post & { profiles: Profile; likes: { user_id: string }[]; comments: { id: string }[] }
+  post: Post & { 
+    profiles: Profile; 
+    likes: { user_id: string }[]; 
+    comments: { id: string }[];
+    telegram_file_id?: string; // Naya field
+    media_type?: string;      // Naya field
+  }
   currentUserId: string
 }
 
@@ -31,7 +37,6 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 
   const handleLike = async () => {
     const supabase = createClient()
-
     if (isLiked) {
       await supabase.from("likes").delete().match({ user_id: currentUserId, post_id: post.id })
       setLikesCount((c) => c - 1)
@@ -45,26 +50,33 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!comment.trim()) return
-
     const supabase = createClient()
     await supabase.from("comments").insert({
       user_id: currentUserId,
       post_id: post.id,
       content: comment,
     })
-
     setComment("")
   }
 
+  // Telegram Proxy URL generate karne ka function
+  const getMediaUrl = () => {
+    if (post.telegram_file_id) {
+      return `/api/media/${post.telegram_file_id}`;
+    }
+    return getBlobUrl(post.media_url);
+  };
+
+  const isVideo = post.telegram_file_id 
+    ? post.media_type === 'video' 
+    : (post.type === "reel" || isVideoFile(post.media_url));
+
   return (
-    <article className="bg-card border border-border rounded-2xl overflow-hidden">
+    <article className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <Link
-          href={`/app/profile/${post.profiles?.username}`}
-          className="flex items-center gap-3"
-        >
-          <Avatar className="w-10 h-10">
+        <Link href={`/app/profile/${post.profiles?.username}`} className="flex items-center gap-3">
+          <Avatar className="w-10 h-10 border border-border">
             <AvatarImage src={getBlobUrl(post.profiles?.profile_pic_url)} />
             <AvatarFallback className="bg-secondary">
               {post.profiles?.username?.[0]?.toUpperCase()}
@@ -72,12 +84,9 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           </Avatar>
           <div>
             <p className="font-semibold text-sm text-foreground">{post.profiles?.username}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatDistanceToNow(post.created_at)}
-            </p>
+            <p className="text-xs text-muted-foreground">{formatDistanceToNow(post.created_at)}</p>
           </div>
         </Link>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -86,135 +95,63 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem>Copy link</DropdownMenuItem>
-            <DropdownMenuItem>Share to...</DropdownMenuItem>
             {post.user_id === currentUserId && (
-              <>
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-              </>
-            )}
-            {post.user_id !== currentUserId && (
-              <DropdownMenuItem className="text-destructive">Report</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Media */}
-      {post.media_url && (
-        <div className="relative aspect-square bg-muted">
-          {post.type === "reel" || isVideoFile(post.media_url) ? (
-            <video
-              src={getBlobUrl(post.media_url)}
-              className="w-full h-full object-cover"
-              controls
-              loop
-              playsInline
-            />
-          ) : (
-            <img
-              src={getBlobUrl(post.media_url)}
-              alt={post.caption || "Post"}
-              className="w-full h-full object-cover"
-            />
-          )}
-
-          {/* Double tap to like */}
-          <motion.button
-            className="absolute inset-0"
-            onDoubleClick={handleLike}
+      {/* Media Rendering Section (Telegram + Vercel Blob) */}
+      <div className="relative aspect-square bg-black overflow-hidden flex items-center justify-center">
+        {isVideo ? (
+          <video
+            src={getMediaUrl()}
+            className="w-full h-full object-cover"
+            controls
+            loop
+            muted
+            playsInline
           />
-        </div>
-      )}
+        ) : (
+          <img
+            src={getMediaUrl()}
+            alt={post.caption || "Post"}
+            className="w-full h-full object-cover"
+          />
+        )}
+        <motion.button className="absolute inset-0" onDoubleClick={handleLike} />
+      </div>
 
-      {/* Actions */}
+      {/* Actions & Footer */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleLike}
-              className={`${isLiked ? "text-red-500" : "text-foreground"}`}
-            >
+            <button onClick={handleLike} className={isLiked ? "text-red-500" : "text-foreground"}>
               <Heart className={`w-6 h-6 ${isLiked ? "fill-current" : ""}`} />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowComments(!showComments)}
-              className="text-foreground"
-            >
+            </button>
+            <button onClick={() => setShowComments(!showComments)}>
               <MessageCircle className="w-6 h-6" />
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }} className="text-foreground">
-              <Send className="w-6 h-6" />
-            </motion.button>
+            </button>
+            <Send className="w-6 h-6 cursor-pointer" />
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsSaved(!isSaved)}
-            className="text-foreground"
-          >
-            <Bookmark className={`w-6 h-6 ${isSaved ? "fill-current" : ""}`} />
-          </motion.button>
+          <Bookmark className={`w-6 h-6 cursor-pointer ${isSaved ? "fill-current" : ""}`} onClick={() => setIsSaved(!isSaved)} />
         </div>
 
-        {/* Likes Count */}
-        <p className="font-semibold text-sm mb-2">
-          {likesCount} {likesCount === 1 ? "like" : "likes"}
-        </p>
-
-        {/* Caption */}
+        <p className="font-semibold text-sm mb-2">{likesCount} likes</p>
+        
         {post.caption && (
           <p className="text-sm mb-2">
-            <Link
-              href={`/app/profile/${post.profiles?.username}`}
-              className="font-semibold mr-2"
-            >
-              {post.profiles?.username}
-            </Link>
+            <span className="font-semibold mr-2">{post.profiles?.username}</span>
             {post.caption}
           </p>
         )}
 
-        {/* Comments Preview */}
         {post.comments && post.comments.length > 0 && (
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="text-sm text-muted-foreground mb-2"
-          >
+          <button onClick={() => setShowComments(!showComments)} className="text-sm text-muted-foreground">
             View all {post.comments.length} comments
           </button>
         )}
-
-        {/* Comment Input */}
-        <AnimatePresence>
-          {showComments && (
-            <motion.form
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              onSubmit={handleComment}
-              className="flex items-center gap-3 pt-3 border-t border-border mt-3"
-            >
-              <input
-                type="text"
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                disabled={!comment.trim()}
-                className="text-primary font-semibold"
-              >
-                Post
-              </Button>
-            </motion.form>
-          )}
-        </AnimatePresence>
       </div>
     </article>
   )
