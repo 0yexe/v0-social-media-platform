@@ -4,13 +4,14 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   X, ChevronLeft, ChevronRight, Loader2, 
-  Grid, Film, Bookmark, Play 
+  Grid, Film, Bookmark, Play, Trash2 
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { getBlobUrl, isVideoFile } from "@/lib/blob-utils"
+import { deletePost } from "@/lib/actions" // 1. Action import kiya
 import Link from "next/link"
 
 export function ProfileView({
@@ -24,9 +25,7 @@ export function ProfileView({
 }: any) {
   const [selectedPost, setSelectedPost] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("posts")
-  const [showReportModal, setShowReportModal] = useState(false)
-  const [reportReason, setReportReason] = useState("")
-  const [submittingReport, setSubmittingReport] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false) // 2. Loading state
 
   const filteredPosts = allPosts.filter((post: any) => {
     if (activeTab === "posts") return post.type !== "reel"
@@ -34,16 +33,23 @@ export function ProfileView({
     return false
   })
 
-  const handleReport = async () => {
-    setSubmittingReport(true)
-    setTimeout(() => {
-      setSubmittingReport(false)
-      setShowReportModal(false)
-      setReportReason("")
-    }, 1000)
+  // 3. Delete handle karne ka function
+  const handleDelete = async (postId: string) => {
+    if (!window.confirm("Bhai, kya sach mein ye post delete karni hai?")) return
+
+    setIsDeleting(true)
+    try {
+      await deletePost(postId)
+      setSelectedPost(null) // Modal band karein
+      // revalidatePath kaam karega toh page khud refresh ho jayega
+    } catch (error) {
+      alert("Delete karne mein error aaya!")
+      console.error(error)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
-  // Media URL nikalne ka logic (Telegram Query Parameter Support)
   const getMediaSource = (post: any) => {
     if (post.telegram_file_id) {
       return `/api/media?fileId=${post.telegram_file_id}`;
@@ -68,7 +74,6 @@ export function ProfileView({
             <div className="flex gap-2">
               {isOwnProfile ? (
                 <Button variant="secondary" size="sm" className="rounded-xl" asChild>
-                  {/* FIXED: Path updated from /app/settings/profile to /app/settings */}
                   <Link href="/app/settings">Edit Profile</Link>
                 </Button>
               ) : (
@@ -84,11 +89,6 @@ export function ProfileView({
             <span><strong>{followersCount}</strong> followers</span>
             <span><strong>{followingCount}</strong> following</span>
           </div>
-          
-          <div>
-            <p className="font-semibold text-sm">{currentProfile.full_name}</p>
-            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{currentProfile.bio || "No bio yet."}</p>
-          </div>
         </div>
       </div>
 
@@ -97,7 +97,6 @@ export function ProfileView({
         {[
           { id: "posts", icon: Grid, label: "POSTS" },
           { id: "reels", icon: Film, label: "REELS" },
-          { id: "saved", icon: Bookmark, label: "SAVED" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -130,11 +129,7 @@ export function ProfileView({
                   </div>
                 </div>
               ) : (
-                <img
-                  src={getMediaSource(post)}
-                  alt="post"
-                  className="w-full h-full object-cover"
-                />
+                <img src={getMediaSource(post)} alt="post" className="w-full h-full object-cover" />
               )}
             </motion.div>
           ))
@@ -174,17 +169,38 @@ export function ProfileView({
                 )}
               </div>
               
-              <div className="w-full md:w-80 p-4 bg-card border-t md:border-t-0 md:border-l border-border overflow-y-auto">
-                <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="w-8 h-8 border border-border">
-                    <AvatarImage src={getBlobUrl(currentProfile.profile_pic_url)} />
-                    <AvatarFallback>{currentProfile.username?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-bold text-sm">{currentProfile.username}</span>
+              <div className="w-full md:w-80 p-4 bg-card border-t md:border-t-0 md:border-l border-border flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="w-8 h-8 border border-border">
+                      <AvatarImage src={getBlobUrl(currentProfile.profile_pic_url)} />
+                      <AvatarFallback>{currentProfile.username?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-bold text-sm">{currentProfile.username}</span>
+                  </div>
+                  <div className="max-h-[200px] overflow-y-auto mb-4">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedPost.caption}</p>
+                  </div>
                 </div>
-                <div className="max-h-[200px] overflow-y-auto">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedPost.caption}</p>
-                </div>
+
+                {/* 4. DELETE BUTTON SECTION */}
+                {isOwnProfile && (
+                  <div className="pt-4 border-t border-border">
+                    <Button 
+                      variant="destructive" 
+                      className="w-full gap-2 rounded-xl"
+                      disabled={isDeleting}
+                      onClick={() => handleDelete(selectedPost.id)}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      {isDeleting ? "Deleting..." : "Delete Post"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
