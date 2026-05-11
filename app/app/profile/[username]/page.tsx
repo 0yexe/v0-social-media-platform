@@ -1,4 +1,4 @@
-      import { createClient } from "@/lib/supabase/server"
+          import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { ProfileView } from "@/components/profile/profile-view"
 
@@ -13,7 +13,7 @@ export default async function ProfilePage({
 
   if (!user) return null
 
-  // 1. Get profile
+  // 1. Fetch Profile Data
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -24,7 +24,7 @@ export default async function ProfilePage({
     notFound()
   }
 
-  // 2. Get posts (Likes aur Comments count ke saath)
+  // 2. Fetch Posts (Including Telegram IDs for Videos/Photos)
   const { data: posts } = await supabase
     .from("posts")
     .select(`
@@ -37,7 +37,7 @@ export default async function ProfilePage({
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false })
 
-  // 3. Get follower/following counts
+  // 3. Fetch Follower/Following Counts
   const { count: followersCount } = await supabase
     .from("follows")
     .select("*", { count: "exact", head: true })
@@ -48,7 +48,7 @@ export default async function ProfilePage({
     .select("*", { count: "exact", head: true })
     .eq("follower_id", profile.id)
 
-  // 4. Check if current user follows this profile
+  // 4. Check if Current User Follows this Profile
   const { data: isFollowing } = await supabase
     .from("follows")
     .select("*")
@@ -56,8 +56,8 @@ export default async function ProfilePage({
     .eq("following_id", profile.id)
     .single()
 
-  // 5. NEW: Highlights Fetch Logic
-  // Ye un saari highlights ko layega jo user ne archive stories se banayi hain
+  // 5. Fetch Highlights (Instagram Style)
+  // Archive stories ko group karke dikhane ke liye
   const { data: highlights } = await supabase
     .from('highlights')
     .select(`
@@ -76,7 +76,7 @@ export default async function ProfilePage({
     <ProfileView
       profile={profile}
       posts={posts || []}
-      highlights={highlights || []} // Naya prop: Highlights data
+      highlights={highlights || []} // Passing highlights to the view
       followersCount={followersCount || 0}
       followingCount={followingCount || 0}
       isFollowing={!!isFollowing}
