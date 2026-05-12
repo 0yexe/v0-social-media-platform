@@ -17,6 +17,8 @@ import {
   EyeOff,
   Camera,
   Loader2,
+  DollarSign,
+  Zap,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -36,7 +38,6 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  // Form states
   const [username, setUsername] = useState("")
   const [bio, setBio] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
@@ -46,14 +47,8 @@ export default function SettingsPage() {
     const fetchProfile = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      
       if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single()
-        
+        const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
         if (data) {
           setProfile(data)
           setUsername(data.username)
@@ -64,7 +59,6 @@ export default function SettingsPage() {
       }
       setLoading(false)
     }
-
     fetchProfile()
     setIsDark(document.documentElement.classList.contains("dark"))
   }, [])
@@ -72,62 +66,29 @@ export default function SettingsPage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !profile) return
-
     setUploadingPhoto(true)
-
     try {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("folder", "avatars")
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) throw new Error("Upload failed")
-
+      const response = await fetch("/api/upload", { method: "POST", body: formData })
       const { pathname } = await response.json()
-
       const supabase = createClient()
-      await supabase
-        .from("profiles")
-        .update({ profile_pic_url: pathname })
-        .eq("id", profile.id)
-
+      await supabase.from("profiles").update({ profile_pic_url: pathname }).eq("id", profile.id)
       setProfile({ ...profile, profile_pic_url: pathname })
     } catch (error) {
-      console.error("Photo upload error:", error)
-    } finally {
-      setUploadingPhoto(false)
-    }
+      console.error(error)
+    } finally { setUploadingPhoto(false) }
   }
 
   const handleSaveProfile = async () => {
     if (!profile) return
     setSaving(true)
-
     const supabase = createClient()
-    await supabase
-      .from("profiles")
-      .update({ username, bio })
-      .eq("id", profile.id)
-
+    await supabase.from("profiles").update({ username, bio }).eq("id", profile.id)
     setSaving(false)
     router.refresh()
-  }
-
-  const handleSavePrivacy = async () => {
-    if (!profile) return
-    setSaving(true)
-
-    const supabase = createClient()
-    await supabase
-      .from("profiles")
-      .update({ is_private: isPrivate, hide_following: hideFollowing })
-      .eq("id", profile.id)
-
-    setSaving(false)
+    setActiveSection("main")
   }
 
   const handleLogout = async () => {
@@ -142,263 +103,128 @@ export default function SettingsPage() {
     setIsDark(!isDark)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+    </div>
+  )
 
   const renderMain = () => (
-    <div className="space-y-2">
-      {/* Profile Link */}
+    <div className="space-y-6">
+      {/* Profile Header Section */}
       <button
         onClick={() => setActiveSection("profile")}
-        className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary transition-colors"
+        className="w-full flex items-center justify-between p-4 group"
       >
-        <Avatar className="w-12 h-12">
-          <AvatarImage src={getBlobUrl(profile?.profile_pic_url)} />
-          <AvatarFallback className="gradient-primary text-white">
-            {profile?.username?.[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 text-left">
-          <p className="font-semibold">{profile?.username}</p>
-          <p className="text-sm text-muted-foreground">Edit profile</p>
+        <div className="flex items-center gap-4">
+          <Avatar className="w-16 h-16 border border-border">
+            <AvatarImage src={getBlobUrl(profile?.profile_pic_url)} />
+            <AvatarFallback className="text-xl gradient-primary text-white font-bold">
+              {profile?.username?.[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-left">
+            <p className="text-lg font-bold">{profile?.username}</p>
+            <p className="text-sm text-muted-foreground group-hover:text-primary transition-colors">Edit profile</p>
+          </div>
         </div>
         <ChevronRight className="w-5 h-5 text-muted-foreground" />
       </button>
 
-      <div className="py-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2">
-          Settings
-        </p>
-
-        <button
+      {/* Settings Menu Section */}
+      <div className="space-y-1">
+        <p className="text-[11px] font-bold text-muted-foreground uppercase px-4 mb-3 tracking-widest">Settings</p>
+        
+        <SettingItem 
+          icon={Lock} 
+          label="Privacy" 
           onClick={() => setActiveSection("privacy")}
-          className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Lock className="w-5 h-5 text-primary" />
-          </div>
-          <span className="flex-1 text-left font-medium">Privacy</span>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
+          iconBg="bg-blue-100 dark:bg-blue-900/20" 
+          iconColor="text-blue-600"
+        />
+        
+        <SettingItem 
+          icon={Bell} 
+          label="Notifications" 
+          iconBg="bg-orange-100 dark:bg-orange-900/20" 
+          iconColor="text-orange-600"
+        />
 
-        <button className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary transition-colors">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-2xl transition-all cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/20 flex items-center justify-center">
+              <Moon className="w-5 h-5 text-indigo-600" />
+            </div>
+            <span className="font-medium">Dark Mode</span>
           </div>
-          <span className="flex-1 text-left font-medium">Notifications</span>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
-
-        <button
-          onClick={toggleDarkMode}
-          className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Moon className="w-5 h-5 text-primary" />
-          </div>
-          <span className="flex-1 text-left font-medium">Dark Mode</span>
-          <div
-            className={`w-12 h-7 rounded-full transition-colors ${
-              isDark ? "bg-primary" : "bg-muted"
-            }`}
+          <div 
+            onClick={toggleDarkMode}
+            className={`w-11 h-6 rounded-full p-1 transition-colors relative ${isDark ? 'bg-primary' : 'bg-muted-foreground/30'}`}
           >
-            <motion.div
-              animate={{ x: isDark ? 22 : 2 }}
-              className="w-5 h-5 mt-1 rounded-full bg-white shadow-sm"
-            />
+            <div className={`w-4 h-4 bg-white rounded-full transition-all ${isDark ? 'translate-x-5' : 'translate-x-0'}`} />
           </div>
-        </button>
+        </div>
 
-        <button className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary transition-colors">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <HelpCircle className="w-5 h-5 text-primary" />
-          </div>
-          <span className="flex-1 text-left font-medium">Help & Support</span>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <SettingItem 
+          icon={HelpCircle} 
+          label="Help & Support" 
+          iconBg="bg-green-100 dark:bg-green-900/20" 
+          iconColor="text-green-600"
+        />
       </div>
 
+      <hr className="border-border mx-4" />
+
+      {/* Monetization Section (Screenshot Style) */}
+      <div className="space-y-1">
+        <SettingItem 
+          icon={DollarSign} 
+          label="Monetize" 
+          subLabel="Earn from your content" 
+          badge="Coming Soon"
+          iconBg="bg-gray-100 dark:bg-gray-800" 
+          iconColor="text-gray-500" 
+        />
+        
+        <SettingItem 
+          icon={Zap} 
+          label="Super Monetize" 
+          subLabel="Unlock advanced earning" 
+          badge="Coming Soon"
+          iconBg="bg-gray-100 dark:bg-gray-800" 
+          iconColor="text-gray-500" 
+        />
+      </div>
+
+      <hr className="border-border mx-4" />
+
+      {/* Logout */}
       <button
         onClick={handleLogout}
-        className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-destructive/10 transition-colors text-destructive"
+        className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all group"
       >
-        <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-          <LogOut className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+          <LogOut className="w-5 h-5 text-red-600" />
         </div>
-        <span className="flex-1 text-left font-medium">Log Out</span>
+        <span className="flex-1 text-left font-bold text-red-600">Log Out</span>
       </button>
-    </div>
-  )
-
-  const renderProfile = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <Avatar className="w-24 h-24">
-            <AvatarImage src={getBlobUrl(profile?.profile_pic_url)} />
-            <AvatarFallback className="text-2xl gradient-primary text-white">
-              {profile?.username?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          {uploadingPhoto && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-              <Loader2 className="w-6 h-6 text-white animate-spin" />
-            </div>
-          )}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingPhoto}
-            className="absolute bottom-0 right-0 w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white shadow-lg border-2 border-card"
-          >
-            <Camera className="w-4 h-4" />
-          </button>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp"
-          onChange={handlePhotoUpload}
-          className="hidden"
-        />
-        <Button 
-          variant="outline" 
-          className="rounded-xl"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingPhoto}
-        >
-          {uploadingPhoto ? "Uploading..." : "Change Photo"}
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">Username</label>
-          <Input
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, "_"))}
-            className="mt-1.5 rounded-xl"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium">Bio</label>
-          <Textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell us about yourself..."
-            className="mt-1.5 rounded-xl resize-none"
-            maxLength={150}
-          />
-          <p className="text-xs text-muted-foreground text-right mt-1">
-            {bio.length}/150
-          </p>
-        </div>
-      </div>
-
-      <Button
-        onClick={handleSaveProfile}
-        disabled={saving}
-        className="w-full gradient-primary text-white rounded-xl"
-      >
-        {saving ? "Saving..." : "Save Changes"}
-      </Button>
-    </div>
-  )
-
-  const renderPrivacy = () => (
-    <div className="space-y-4">
-      <div className="p-4 rounded-xl bg-card border border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-primary" />
-            <div>
-              <p className="font-medium">Private Account</p>
-              <p className="text-xs text-muted-foreground">
-                Only approved followers can see your posts
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsPrivate(!isPrivate)}
-            className={`w-12 h-7 rounded-full transition-colors ${
-              isPrivate ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            <motion.div
-              animate={{ x: isPrivate ? 22 : 2 }}
-              className="w-5 h-5 mt-1 rounded-full bg-white shadow-sm"
-            />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4 rounded-xl bg-card border border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {hideFollowing ? (
-              <EyeOff className="w-5 h-5 text-primary" />
-            ) : (
-              <Eye className="w-5 h-5 text-primary" />
-            )}
-            <div>
-              <p className="font-medium">Hide Following List</p>
-              <p className="text-xs text-muted-foreground">
-                Others won&apos;t see who you follow
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setHideFollowing(!hideFollowing)}
-            className={`w-12 h-7 rounded-full transition-colors ${
-              hideFollowing ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            <motion.div
-              animate={{ x: hideFollowing ? 22 : 2 }}
-              className="w-5 h-5 mt-1 rounded-full bg-white shadow-sm"
-            />
-          </button>
-        </div>
-      </div>
-
-      <Button
-        onClick={handleSavePrivacy}
-        disabled={saving}
-        className="w-full gradient-primary text-white rounded-xl"
-      >
-        {saving ? "Saving..." : "Save Privacy Settings"}
-      </Button>
     </div>
   )
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-card/95 backdrop-blur-xl border-b border-border">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 p-4 max-w-xl mx-auto">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() =>
-              activeSection === "main"
-                ? router.back()
-                : setActiveSection("main")
-            }
+            onClick={() => activeSection === "main" ? router.back() : setActiveSection("main")}
             className="rounded-full"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-bold">
-            {activeSection === "main"
-              ? "Settings"
-              : activeSection === "profile"
-              ? "Edit Profile"
-              : "Privacy"}
+          <h1 className="text-xl font-bold tracking-tight">
+            {activeSection === "main" ? "Settings" : activeSection === "profile" ? "Edit Profile" : "Privacy"}
           </h1>
         </div>
       </header>
@@ -408,6 +234,34 @@ export default function SettingsPage() {
         {activeSection === "profile" && renderProfile()}
         {activeSection === "privacy" && renderPrivacy()}
       </div>
+    </div>
+  )
+}
+
+// Reusable Menu Item Component
+function SettingItem({ icon: Icon, label, subLabel, badge, onClick, iconBg, iconColor }: any) {
+  return (
+    <div 
+      onClick={onClick}
+      className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-2xl transition-all cursor-pointer group"
+    >
+      <div className="flex items-center gap-4 text-left">
+        <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{label}</span>
+            {badge && (
+              <span className="text-[9px] font-bold bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded-full">
+                {badge}
+              </span>
+            )}
+          </div>
+          {subLabel && <p className="text-xs text-muted-foreground mt-0.5">{subLabel}</p>}
+        </div>
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
     </div>
   )
 }
