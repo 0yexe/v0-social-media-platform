@@ -75,7 +75,8 @@ export default function SettingsPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
               
               {/* Profile Card */}
-              <button onClick={() => router.push('/app/settings/profile')} className="w-full flex items-center justify-between p-4 rounded-3xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-all">
+              <button onClick={() => router.push('/app/profile/edit')} className="w-full flex items-center justify-between p-4 rounded-3xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-all">
+                
                 <div className="flex items-center gap-4">
                   <Avatar className="w-16 h-16 border-2 border-background shadow-sm">
                     <AvatarImage src={getBlobUrl(profile?.profile_pic_url)} />
