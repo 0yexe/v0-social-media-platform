@@ -3,7 +3,6 @@ import { StoryBar } from "@/components/feed/story-bar"
 import { PostCard } from "@/components/feed/post-card"
 import { Search, UserPlus, Sparkles } from "lucide-react"
 import Link from "next/link"
-import type { Story, Post, Profile } from "@/lib/types"
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -25,8 +24,7 @@ export default async function FeedPage() {
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
 
-  // 3. Posts Fetch (REVISED QUERY)
-  // Maine query ko simple rakha hai taki crash na ho
+  // 3. Posts Fetch (Mazboot Query)
   const { data: posts, error } = await supabase
     .from("posts")
     .select(`
@@ -42,11 +40,12 @@ export default async function FeedPage() {
     console.error("Database Error:", error.message)
   }
 
-  // Frontend par count handle karne ka sahi aur safe tarika
+  // Frontend par count handle karne ka sabse safe tarika
   const formattedPosts = (posts || []).map(post => ({
     ...post,
-    likes_count: post.likes ? post.likes.length : 0,
-    comments_count: post.comments ? post.comments.length : 0
+    // TypeScript ko khush rakhne ke liye length check
+    likes_count: Array.isArray(post.likes) ? post.likes.length : 0,
+    comments_count: Array.isArray(post.comments) ? post.comments.length : 0
   }))
 
   return (
@@ -67,9 +66,9 @@ export default async function FeedPage() {
       {/* Story Section */}
       <div className="bg-card border-b border-border mb-2">
         <StoryBar 
-          stories={(stories || []) as (Story & { profiles: Profile })[]} 
+          stories={(stories || []) as any} 
           currentUserId={user.id} 
-          currentUserProfile={profile} 
+          currentUserProfile={profile as any} 
         />
       </div>
 
