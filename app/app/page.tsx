@@ -25,14 +25,15 @@ export default async function FeedPage() {
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
 
-  // 3. Posts Fetch (Correct Count Logic)
+  // 3. Posts Fetch (REVISED QUERY)
+  // Maine query ko simple rakha hai taki crash na ho
   const { data: posts, error } = await supabase
     .from("posts")
     .select(`
       *,
       profiles (*),
-      likes:likes(count),
-      comments:comments(count)
+      likes (id),
+      comments (id)
     `)
     .order("created_at", { ascending: false })
     .limit(50)
@@ -40,6 +41,13 @@ export default async function FeedPage() {
   if (error) {
     console.error("Database Error:", error.message)
   }
+
+  // Frontend par count handle karne ka sahi aur safe tarika
+  const formattedPosts = (posts || []).map(post => ({
+    ...post,
+    likes_count: post.likes ? post.likes.length : 0,
+    comments_count: post.comments ? post.comments.length : 0
+  }))
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -67,16 +75,11 @@ export default async function FeedPage() {
 
       {/* Posts Feed */}
       <div className="max-w-xl mx-auto p-4 space-y-6">
-        {posts && posts.length > 0 ? (
-          posts.map((post) => (
+        {formattedPosts.length > 0 ? (
+          formattedPosts.map((post) => (
             <PostCard 
               key={post.id} 
-              post={{
-                ...post,
-                // Count handle karne ka sahi tarika
-                likes_count: post.likes?.[0]?.count ?? 0,
-                comments_count: post.comments?.[0]?.count ?? 0
-              } as any} 
+              post={post as any} 
               currentUserId={user.id} 
             />
           ))
@@ -87,7 +90,7 @@ export default async function FeedPage() {
             </div>
             <h3 className="text-xl font-bold italic">No posts yet!</h3>
             <p className="text-muted-foreground mt-2 max-w-[280px]">
-              Be the first one to post something or search for friends to follow.
+              Bhai, abhi tak kisi ne kuch post nahi kiya. Pehle aap hi kuch dalo!
             </p>
             <Link href="/app/search" className="mt-6 text-primary font-bold hover:underline">
               Find friends to follow
