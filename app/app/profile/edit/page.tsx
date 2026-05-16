@@ -14,7 +14,7 @@ export default function EditProfilePage() {
   const supabase = createClient()
   const router = useRouter()
 
-  // 1. Purani Bio aur Data load karna
+  // Load current profile data
   useEffect(() => {
     async function getProfile() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -27,7 +27,7 @@ export default function EditProfilePage() {
     getProfile()
   }, [])
 
-  // 2. Nayi Bio save karne ka function
+  // Save updated profile data
   const handleSave = async () => {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -36,14 +36,14 @@ export default function EditProfilePage() {
       .from("profiles")
       .update({
         full_name: profile.full_name,
-        bio: profile.bio // Ye line database mein bio bhejegi
+        bio: profile.bio
       })
       .eq("id", user?.id)
 
     if (error) {
-      alert("Galti ho gayi: " + error.message)
+      alert("Error saving profile: " + error.message)
     } else {
-      // Save hone ke baad wapas profile par bhejna
+      // Redirect back to profile after saving
       router.push(`/app/profile/${profile.username}`)
       router.refresh() 
     }
@@ -76,7 +76,7 @@ export default function EditProfilePage() {
         <div className="space-y-2">
           <label className="text-sm font-semibold text-muted-foreground">Bio</label>
           <Textarea 
-            placeholder="Apne baare mein kuch achha likhein..." 
+            placeholder="Write something about yourself..."
             value={profile.bio || ''} 
             onChange={e => setProfile({...profile, bio: e.target.value})}
             className="bg-muted/30 min-h-[120px]"

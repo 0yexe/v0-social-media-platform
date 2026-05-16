@@ -40,10 +40,10 @@ export default async function FeedPage() {
     console.error("Database Error:", error.message)
   }
 
-  // Frontend par count handle karne ka sabse safe tarika
+  // Safe way to handle counts on the frontend
   const formattedPosts = (posts || []).map(post => ({
     ...post,
-    // TypeScript ko khush rakhne ke liye length check
+    // Length check to satisfy TypeScript
     likes_count: Array.isArray(post.likes) ? post.likes.length : 0,
     comments_count: Array.isArray(post.comments) ? post.comments.length : 0
   }))
@@ -89,7 +89,7 @@ export default async function FeedPage() {
             </div>
             <h3 className="text-xl font-bold italic">No posts yet!</h3>
             <p className="text-muted-foreground mt-2 max-w-[280px]">
-              Bhai, abhi tak kisi ne kuch post nahi kiya. Pehle aap hi kuch dalo!
+              No posts yet. Follow some friends to see their posts here!
             </p>
             <Link href="/app/search" className="mt-6 text-primary font-bold hover:underline">
               Find friends to follow

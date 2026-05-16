@@ -7,18 +7,18 @@ export function FollowButton({ targetUserId, currentUserId, initialIsFollowing }
   const router = useRouter()
   const supabase = createClient()
   
-  // Local state taaki UI ekdum fast update ho
+  // Local state for fast UI updates
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [loading, setLoading] = useState(false)
 
   const handleToggleFollow = async () => {
     if (!currentUserId || !targetUserId) {
-      console.error("TIGR Error: currentUserId ya targetUserId missing hai!")
+      console.error("TIGR Error: currentUserId or targetUserId is missing!")
       return
     }
 
     setLoading(true)
-    // Optimistic Update: Pehle hi UI badal do taaki user ko lagne lage kaam ho gaya
+    // Optimistic update: change UI immediately before server confirms
     setIsFollowing(!isFollowing)
 
     if (isFollowing) {
@@ -29,8 +29,8 @@ export function FollowButton({ targetUserId, currentUserId, initialIsFollowing }
         .match({ follower_id: currentUserId, following_id: targetUserId })
 
       if (error) {
-        console.error("Unfollow karne mein error aaya:", error.message)
-        setIsFollowing(true) // Error aaya toh wapas purani state par le jao
+        console.error("Error while unfollowing:", error.message)
+        setIsFollowing(true) // Revert to previous state on error
       }
     } else {
       //  FOLLOW LOGIC
@@ -39,13 +39,13 @@ export function FollowButton({ targetUserId, currentUserId, initialIsFollowing }
         .insert({ follower_id: currentUserId, following_id: targetUserId })
 
       if (error) {
-        console.error("Follow karne mein error aaya:", error.message)
-        setIsFollowing(false) // Error aaya toh wapas purani state par le jao
+        console.error("Error while following:", error.message)
+        setIsFollowing(false) // Revert to previous state on error
       }
     }
 
     setLoading(false)
-    // Background mein data refresh karo taaki follow count update ho jaye
+    // Refresh in background to update follow counts
     router.refresh()
   }
 

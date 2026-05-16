@@ -7,7 +7,6 @@ export default async function LandingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Agar user pehle se login hai, toh use seedha Feed page par bhej do
   if (user) {
     redirect("/app")
   }
@@ -26,7 +25,7 @@ export default async function LandingPage() {
         TIGR
       </h1>
       <p className="text-muted-foreground max-w-[280px] mb-10 text-lg font-medium leading-relaxed">
-        Muzaffarnagar ka apna naya social media platform. Join karo aur shuru karo!
+        The premier social media platform for Muzaffarnagar. Join now and connect!
       </p>
 
       {/* Action Buttons */}
