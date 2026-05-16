@@ -32,7 +32,7 @@ export default async function LandingPage() {
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 w-full max-w-xs">
         <Link 
-          href="/login" 
+          href="/auth/login" 
           className="bg-primary text-primary-foreground h-14 rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform gap-2"
         >
           Get Started <ArrowRight className="w-5 h-5" />
