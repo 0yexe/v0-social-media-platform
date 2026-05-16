@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Upload, X, Loader2, Image as ImageIcon, Film, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { createClient } from "@/lib/supabase/client" // Apna path check kar lein
+import { createClient } from "@/lib/supabase/client"
 
 export default function CreatePage() {
   const [type, setType] = useState<"post" | "reel" | "story">("post")
@@ -44,54 +44,57 @@ export default function CreatePage() {
     }
   }
 
-  // 2. Share/Upload logic (Telegram + Supabase)
+  // 2. Share/Upload logic (Ab ekdam smooth loader ke saath)
   const handleShare = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user || !file || loading) return
 
     setLoading(true)
-    setUploadProgress(20)
+    setUploadProgress(1) // 1% se shuru karein
+
+    // 🔥 Premium Simulated Progress Bar Interval
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(progressInterval)
+          return prev
+        }
+        return prev + Math.floor(Math.random() * 5) + 3 // Random speed se badhega
+      })
+    }, 150)
 
     try {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('type', type)
+      formData.append('caption', caption) // Backend ko caption bheja
 
-      // Telegram API Call
+      // Backend API Call (Yahi Telegram par bhejega aur Supabase mein save karega)
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       })
 
       const data = await res.json()
-      setUploadProgress(70)
 
       if (data.success) {
-        // Supabase Entry
-        const table = type === 'story' ? 'stories' : 'posts'
-        const { error: dbError } = await supabase
-          .from(table)
-          .insert({
-            user_id: user.id,
-            content: type !== 'story' ? caption : null,
-            telegram_file_id: data.fileId,
-            media_type: data.isVideo ? 'video' : 'image',
-            expires_at: type === 'story' ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null
-          })
+        clearInterval(progressInterval)
+        setUploadProgress(100) // Kamyabi par 100% complete
 
-        if (dbError) throw dbError
-        
-        setUploadProgress(100)
-        router.push('/')
-        router.refresh()
+        // Chota sa delay taaki user 100% dekh sake, phir redirect
+        setTimeout(() => {
+          router.push('/')
+          router.refresh()
+        }, 500)
       } else {
-        throw new Error(data.error)
+        throw new Error(data.error || 'Upload failed')
       }
     } catch (error: any) {
+      clearInterval(progressInterval)
+      setUploadProgress(0)
       alert("Upload fail ho gaya: " + error.message)
     } finally {
       setLoading(false)
-      setUploadProgress(0)
     }
   }
 
@@ -141,14 +144,19 @@ export default function CreatePage() {
                 variant="ghost"
                 onClick={() => { setFile(null); setPreview(null); }}
                 className="absolute top-3 right-3 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                disabled={loading}
               >
                 <X className="w-4 h-4" />
               </Button>
+              
+              {/* 🔥 Ekdam Clean Loader Jaisa Tumne Kaha Thha */}
               {loading && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
                   <div className="text-center text-white p-4">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm font-medium">Telegram pe bhej raha hoon... {uploadProgress}%</p>
+                    <Loader2 className="w-10 h-10 animate-spin mx-auto mb-3 text-primary" />
+                    <p className="text-lg font-bold tracking-wide animate-pulse">
+                      wait... {uploadProgress}%
+                    </p>
                   </div>
                 </div>
               )}
@@ -186,9 +194,10 @@ export default function CreatePage() {
             <Textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Kuch likhiye..."
+              placeholder="Write a caption..."
               className="min-h-[120px] resize-none rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary"
               maxLength={2200}
+              disabled={loading}
             />
             <p className="text-xs text-muted-foreground text-right">{caption.length}/2200</p>
           </div>
