@@ -19,7 +19,7 @@ export default function CreatePage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // 1. File select aur Duration Check logic
+  // File selection and duration check logic
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
@@ -30,7 +30,7 @@ export default function CreatePage() {
       video.onloadedmetadata = async () => {
         window.URL.revokeObjectURL(video.src);
         if (video.duration > 60) {
-          alert("Bhai, Reel sirf 1 minute tak ki hi upload kar sakte hain!");
+          alert("Reels can only be up to 1 minute long. Please trim your video and try again.");
           e.target.value = '';
           return;
         }
@@ -88,7 +88,7 @@ export default function CreatePage() {
         throw new Error(data.error)
       }
     } catch (error: any) {
-      alert("Upload fail ho gaya: " + error.message)
+      alert("Upload failed: " + error.message)
     } finally {
       setLoading(false)
       setUploadProgress(0)
@@ -148,7 +148,7 @@ export default function CreatePage() {
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <div className="text-center text-white p-4">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm font-medium">Telegram pe bhej raha hoon... {uploadProgress}%</p>
+                    <p className="text-sm font-medium">Uploading... {uploadProgress}%</p>
                   </div>
                 </div>
               )}
@@ -186,7 +186,7 @@ export default function CreatePage() {
             <Textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Kuch likhiye..."
+              placeholder="Write a caption..."
               className="min-h-[120px] resize-none rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary"
               maxLength={2200}
             />

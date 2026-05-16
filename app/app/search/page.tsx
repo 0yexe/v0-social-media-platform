@@ -29,7 +29,7 @@ export default function SearchPage() {
     
     setLoading(true)
     
-    // Sabse important change: .or use karke username aur full_name dono search karna
+    // Search by username and full_name using .or
     const { data, error } = await supabase
       .from("profiles")
       .select(`
@@ -43,7 +43,7 @@ export default function SearchPage() {
       const formattedUsers = data.map((u: any) => ({
         ...u,
         isFollowing: u.is_following?.[0]?.count > 0,
-        isMe: u.id === currentId // Pehchanne ke liye ki ye meri profile hai
+        isMe: u.id === currentId // flag to identify current user's own profile
       }))
       setUsers(formattedUsers)
     }
@@ -53,7 +53,7 @@ export default function SearchPage() {
   const toggleFollow = async (targetId: string, currentlyFollowing: boolean) => {
     if (!currentId) return
     
-    // Optimistic UI update (turant screen pe change dikhao)
+    // Optimistic UI update (reflect changes immediately)
     setUsers(users.map(u => u.id === targetId ? { ...u, isFollowing: !currentlyFollowing } : u))
 
     if (currentlyFollowing) {
@@ -94,8 +94,8 @@ export default function SearchPage() {
 
         {!loading && users.length === 0 && query.trim().length >= 2 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground text-sm font-medium">Bhai, is naam ka koi nahi mila.</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Sahi spelling check karo!</p>
+            <p className="text-muted-foreground text-sm font-medium">No users found with this name.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Please check the spelling and try again.</p>
           </div>
         )}
 

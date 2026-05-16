@@ -25,7 +25,7 @@ export default async function ProfilePage(props: {
 
     if (profileError || !profile) return notFound()
 
-    // 2. Parallel Fetching (Highlights ko temporary hata diya hai error rokne ke liye)
+    // Parallel data fetching for profile, followers, following, and follow status
     const [postsRes, followersRes, followingRes, followRecordRes] = await Promise.all([
       supabase.from("posts").select(`*, likes:likes(count), comments:comments(count)`).eq("user_id", profile.id).order("created_at", { ascending: false }),
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
@@ -61,7 +61,7 @@ export default async function ProfilePage(props: {
     return (
       <div className="p-10 text-center">
         <h2 className="text-red-500 font-bold text-xl mb-4">Database Connection Issue</h2>
-        <p className="text-muted-foreground">Bhai, shayad database tables mein kuch kami hai. Ek baar Supabase check karo.</p>
+        <p className="text-muted-foreground">There was an issue loading this profile. Please check your database configuration and try again.</p>
       </div>
     )
   }

@@ -32,7 +32,7 @@ export function ProfileView({
   })
 
   const handleDelete = async (postId: string) => {
-    if (!window.confirm("Bhai, kya sach mein ye post delete karni hai?")) return
+    if (!window.confirm("Are you sure you want to delete this post?")) return
     setIsDeleting(true)
     try {
       await deletePost(postId)

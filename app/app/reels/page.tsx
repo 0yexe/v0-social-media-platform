@@ -5,7 +5,7 @@ import Link from "next/link"
 export default async function ReelsPage() {
   const supabase = await createClient()
 
-  // Database se sirf video waali posts fetch kar rahe hain
+  // Fetch video posts from the database
   const { data: reels, error } = await supabase
     .from("posts")
     .select(`
@@ -19,8 +19,7 @@ export default async function ReelsPage() {
     console.error("Supabase Error:", error.message)
   }
 
-  // Agar database mein koi video na mile toh yeh filter temporary hata bhi sakte hain
-  // Abhi ke liye hum un posts ko dikhayenge jinme media_url maujood hai
+  // Fetch only posts that have a media_url (video posts)
   const videoReels = reels?.filter(post => post.media_url) || []
 
   return (
@@ -31,7 +30,7 @@ export default async function ReelsPage() {
             key={reel.id} 
             className="w-full h-[calc(100vh-64px)] snap-start relative flex items-center justify-center bg-black border-b border-zinc-900"
           >
-            {/* 🎥 Video Player (Muted rakha hai taaki autoPlay block na ho) */}
+            {/* Video Player (muted to allow autoPlay) */}
             <video
               src={reel.media_url}
               className="w-full h-full object-cover"
@@ -90,12 +89,11 @@ export default async function ReelsPage() {
           </div>
         ))
       ) : (
-        /* 🔔 Empty State (Jab koi video na ho) */
         <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 bg-zinc-950 px-6 text-center">
           <Film className="w-16 h-16 opacity-30 text-purple-500 animate-pulse" />
           <h3 className="text-lg font-bold text-zinc-200">No Reels Yet!</h3>
           <p className="text-xs text-zinc-400 max-w-xs">
-            Abhi tak kisi ne video upload nahi ki hai. Aap sabse pehle naye section mein video daal kar shuruat karein!
+            No videos uploaded yet. Be the first to share a reel!
           </p>
           <Link href="/app/create" className="mt-4 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-purple-500/20 hover:bg-purple-700 transition-colors">
             Create First Reel
